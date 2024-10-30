@@ -2,14 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReservationService } from '../reservation/reservation.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DatePipe } from '@angular/common';
 import { Reservation } from '../models/reservation'; // Ensure this import
 
 @Component({
   selector: 'app-reservation-form',
   templateUrl: './reservation-form.component.html',
   styleUrls: ['./reservation-form.component.css'],
-  providers: [DatePipe],
+  providers: [],
 })
 export class ReservationFormComponent implements OnInit {
   reservationForm: FormGroup;
@@ -18,8 +17,7 @@ export class ReservationFormComponent implements OnInit {
     private formBuilder: FormBuilder,
     private reservationService: ReservationService,
     private router: Router,
-    private activatedRoute: ActivatedRoute,
-    private datePipe: DatePipe
+    private activatedRoute: ActivatedRoute
   ) {
     // Initialize reservationForm in the constructor
     this.reservationForm = this.formBuilder.group({
@@ -46,16 +44,30 @@ export class ReservationFormComponent implements OnInit {
     if (this.reservationForm.valid) {
       let res: Reservation = this.reservationForm.value;
       let id = this.activatedRoute.snapshot.paramMap.get('id');
+      const navigateToList = () => {
+        this.router.navigate(['/list']);
+      };
       if (id) {
         this.reservationService.updateReservation(id, res).subscribe(() => {
           console.log(`Reservation ${id} updated`);
+          this.reservationService
+            .getReservations()
+            .subscribe((updatedReservations) => {
+              console.log('Updated Reservations:', updatedReservations);
+            });
+          navigateToList();
         });
       } else {
-        this.reservationService.addReservation(res).subscribe(() => {
-          console.log(`Reservation added`);
+        this.reservationService.addReservation(res).subscribe({
+          next: () => {
+            console.log(`Reservation added.`);
+            navigateToList();
+          },
+          error: (error) => {
+            console.error('Error adding reservation', error);
+          },
         });
       }
-      this.router.navigate(['/list']);
     }
   }
 }
